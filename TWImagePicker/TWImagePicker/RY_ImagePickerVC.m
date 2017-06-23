@@ -73,8 +73,11 @@
 }
 - (void)_back{
     if (self.delegate) {
+        
         [self dismissViewControllerAnimated:YES completion:nil];
-    }else{
+    }
+    else{
+        
         [self.navigationController popViewControllerAnimated:YES];
     }
 }
@@ -88,6 +91,10 @@
         if ([[UIApplication sharedApplication] canOpenURL:url]) {
             
             [[UIApplication sharedApplication] openURL:url];
+//            [[UIApplication sharedApplication] openURL:url options:@{UIApplicationOpenURLOptionUniversalLinksOnly : @YES} completionHandler:^(BOOL success) {
+//                
+//                
+//            }];
         }
     }];
     UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
@@ -119,33 +126,35 @@
     if ([NSThread isMainThread]) {
         
         [_collectionView reloadData];
-//        _collectionView.contentOffset = CGPointMake(0, _collectionView.contentSize.height - _collectionView.frame.size.height);
-
+        [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
+            
+            [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+            
+            [timer invalidate];
+        }];
     }
     else{
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             
             [_collectionView reloadData];
-//            _collectionView.contentOffset = CGPointMake(0, _collectionView.contentSize.height - _collectionView.frame.size.height);
-
+            [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
+                
+                [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+                
+                [timer invalidate];
+            }];
         });
     }
    
-  [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
-      
-      [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
-      
-      [timer invalidate];
-  }];
+ 
     
-
-    return;
+/*
 //    PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
 //    [options setVersion:PHImageRequestOptionsVersionCurrent];
 //    [options setResizeMode:PHImageRequestOptionsResizeModeFast];
 //    [options setDeliveryMode:PHImageRequestOptionsDeliveryModeOpportunistic];
-//
+
     NSArray *temp = [NSArray arrayWithArray:self.dataSource];
     for (RY_Asset *asset  in temp) {
         
@@ -173,7 +182,7 @@
             }
         }];
     }
-   
+   //*/
 }
 
 @end
@@ -393,7 +402,7 @@
         if (self.selectedResults.count >= self.maxSelectedCount) {
             
             
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"你最多只能选择%ld张照片", self.maxSelectedCount] message:nil preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"你最多只能选择%ld张照片", (long)self.maxSelectedCount] message:nil preferredStyle:UIAlertControllerStyleAlert];
             UIAlertAction *iKonw = [UIAlertAction actionWithTitle:@"我知道了" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
                 
                 
@@ -408,7 +417,7 @@
     
     [_collectionView reloadItemsAtIndexPaths:[NSArray arrayWithObject:indexPath]];
     
-    _countLabel.text = [NSString stringWithFormat:@"%ld", self.selectedResults.count];
+    _countLabel.text = [NSString stringWithFormat:@"%ld", (unsigned long)self.selectedResults.count];
     if (self.selectedResults.count == 0) {
         
         _sureButton.enabled = NO;
