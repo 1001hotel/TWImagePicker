@@ -47,6 +47,7 @@
 
 - (void)_cancel{
 
+    [self.navigationController popViewControllerAnimated:YES];
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 - (void)_sure{
@@ -72,14 +73,9 @@
     
 }
 - (void)_back{
-    if (self.delegate) {
-        
-        [self dismissViewControllerAnimated:YES completion:nil];
-    }
-    else{
-        
-        [self.navigationController popViewControllerAnimated:YES];
-    }
+    
+    [self.navigationController popViewControllerAnimated:YES];
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 - (void)_showNoAcceessToPhotoLibrary{
 
