@@ -126,24 +126,29 @@
     if ([NSThread isMainThread]) {
         
         [_collectionView reloadData];
-        [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
-            
-            [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
-            
-            [timer invalidate];
-        }];
+        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(_scrollToBottom:) userInfo:nil repeats:NO];
+
+//        [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
+//            
+//            [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+//            
+//            [timer invalidate];
+//        }];
     }
     else{
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             
             [_collectionView reloadData];
-            [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
-                
-                [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
-                
-                [timer invalidate];
-            }];
+            
+            [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(_scrollToBottom:) userInfo:nil repeats:NO];
+//            
+//            [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
+//                
+//                [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+//                
+//                [timer invalidate];
+//            }];
         });
     }
    
@@ -183,6 +188,12 @@
         }];
     }
    //*/
+}
+- (void)_scrollToBottom:(NSTimer *)timer{
+
+    [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+    
+    [timer invalidate];
 }
 
 @end
