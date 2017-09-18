@@ -310,10 +310,6 @@
     }
     return result;
 }
-- (BOOL)isGifAsset:(PHAsset *)asset{
-
-       return YES;
-}
 - (void)isGIFAsset:(PHAsset *)asset withResult:(isGIFBlock)result{
         
         PHImageRequestOptions *requestoptions = [[PHImageRequestOptions alloc] init];

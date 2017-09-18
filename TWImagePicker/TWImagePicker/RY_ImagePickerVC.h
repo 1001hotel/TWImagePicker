@@ -33,7 +33,6 @@ typedef void(^isGIFBlock)(BOOL isGif);
 
 
 - (BOOL)isExistAsset:(PHAsset *)asset;
-- (BOOL)isGifAsset:(PHAsset *)asset;
 - (void)isGIFAsset:(PHAsset *)asset withResult:(isGIFBlock)result;
 
 
