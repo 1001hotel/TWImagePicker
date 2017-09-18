@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
 s.name         = "TWImagePicker"
 
-  s.version      = "1.2.3"
+  s.version      = "1.2.4"
 
   s.summary      = "A Image picker used on iOS."
 

@@ -24,6 +24,7 @@ RY_ImagePickerVCDelegate
     RY_ImagePickerVC *picker = [[RY_ImagePickerVC alloc] init];
     picker.maxSelectedCount = 20;
     picker.delegate = self;
+    picker.isGIFAvailable = YES;
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:picker];
     [self presentViewController:nav animated:YES completion:nil];
 }

@@ -142,25 +142,32 @@
         NSArray *temp = [NSArray arrayWithArray:self.dataSource];
         for (RY_Asset *asset  in temp) {
             
-            [self.imageManager requestImageDataForAsset:asset.asset options:requestoptions resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
+            if ([[NSUserDefaults standardUserDefaults] objectForKey:asset.asset.localIdentifier] == nil
+) {
                 
-                BOOL isGIF = NO;
-                if ([dataUTI isEqualToString:(__bridge NSString *)kUTTypeGIF]) {
+                [self.imageManager requestImageDataForAsset:asset.asset options:requestoptions resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
                     
-                    isGIF = YES;
-                }
-                
-                for ( int i = 0; i < self.dataSource.count; i ++) {
-                    
-                    RY_Asset *ry = [self.dataSource objectAtIndex:i];
-                    if ([ry.asset isEqual:asset.asset]) {
+                    BOOL isGIF = NO;
+                    if ([dataUTI isEqualToString:(__bridge NSString *)kUTTypeGIF]) {
                         
-                        ry.isGIF = isGIF;
-                        
-                        [_collectionView reloadItemsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:i inSection:0]]];
+                        isGIF = YES;
                     }
-                }
-            }];
+                    
+                    for ( int i = 0; i < self.dataSource.count; i ++) {
+                        
+                        RY_Asset *ry = [self.dataSource objectAtIndex:i];
+                        if ([ry.asset isEqual:asset.asset]) {
+                            
+                            ry.isGIF = isGIF;
+                            
+                            [_collectionView reloadItemsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:i inSection:0]]];
+                            
+                            NSLog(@"%@", asset.asset.localIdentifier);
+                            [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:isGIF] forKey:asset.asset.localIdentifier];
+                        }
+                    }
+                }];
+            }
         }
     }
 }
@@ -356,6 +363,8 @@
     }
     
     
+    BOOL isGif = [[[NSUserDefaults standardUserDefaults] objectForKey:asset.asset.localIdentifier] boolValue];
+    asset.isGIF = isGif;
     if (asset.isGIF){
         
         cell.gifLabel.hidden = NO;
