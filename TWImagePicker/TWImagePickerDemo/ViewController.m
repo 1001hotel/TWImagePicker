@@ -22,7 +22,7 @@ RY_ImagePickerVCDelegate
 - (IBAction)_picker:(id)sender {
     
     RY_ImagePickerVC *picker = [[RY_ImagePickerVC alloc] init];
-    picker.maxSelectedCount = 1;
+    picker.maxSelectedCount = 20;
     picker.delegate = self;
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:picker];
     [self presentViewController:nav animated:YES completion:nil];
@@ -46,6 +46,14 @@ RY_ImagePickerVCDelegate
 - (void)RY_ImagePickerVC:(RY_ImagePickerVC *)vc didselectWithAssets:(NSArray *)assets{
 
     [self dismissViewControllerAnimated:YES completion:nil];
+    
+    for (PHAsset *asset in assets) {
+        
+        [[RY_ImagePickerVC sharedInstance] isGIFAsset:asset withResult:^(BOOL isGif) {
+            
+            NSLog(@"%@", isGif ? @"GIf" : @"noGIF");
+        }];
+    }
 }
 
 @end

@@ -12,6 +12,6 @@
 @interface RY_Asset : NSObject
 
 @property (nonatomic, strong)PHAsset *asset;
-@property (nonatomic, assign)NSString *gifTag;
+@property (nonatomic, assign)BOOL isGIF;
 
 @end

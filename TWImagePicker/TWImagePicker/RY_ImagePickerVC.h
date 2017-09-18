@@ -13,6 +13,8 @@
 
 @class RY_ImagePickerVC;
 
+typedef void(^isGIFBlock)(BOOL isGif);
+
 @protocol RY_ImagePickerVCDelegate <NSObject>
 
 - (void)RY_ImagePickerVC:(RY_ImagePickerVC *)vc didselectWithAssets:(NSArray *)assets;
@@ -23,12 +25,18 @@
 
 @property(nonatomic, assign)id<RY_ImagePickerVCDelegate>delegate;
 @property(nonatomic, assign)NSInteger maxSelectedCount;
+@property(nonatomic, assign)BOOL isGIFAvailable;
+
 
 + (RY_ImagePickerVC *)sharedInstance;
 
 
 
 - (BOOL)isExistAsset:(PHAsset *)asset;
+- (BOOL)isGifAsset:(PHAsset *)asset;
+- (void)isGIFAsset:(PHAsset *)asset withResult:(isGIFBlock)result;
+
+
 
 
 @end

@@ -9,12 +9,12 @@
 Pod::Spec.new do |s|
 s.name         = "TWImagePicker"
 
-  s.version      = "1.1.1"
+  s.version      = "1.2.0"
 
   s.summary      = "A Image picker used on iOS."
 
   s.description  = <<-DESC
-                   It is a image picker used on iOS, which implement by Objective-C.
+                   It is a image picker used on iOS, which implement by Objective-C. Avaliable GIF image in 1.2.0
                    DESC
 
   s.homepage     = "https://github.com/1001hotel/TWImagePicker"

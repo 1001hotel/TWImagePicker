@@ -33,7 +33,7 @@
     
 }
 
-@property (strong) PHImageManager *imageManager;
+@property (nonatomic, strong) PHImageManager *imageManager;
 @property(nonatomic, strong) PHFetchResult *assetsFetchResults;
 @property(nonatomic, strong) NSMutableArray *dataSource;
 
@@ -104,7 +104,6 @@
 }
 - (void)_loadData{
     
-    self.imageManager = [PHImageManager defaultManager];
     
     PHFetchOptions *options = [[PHFetchOptions alloc] init];
     options.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:YES]];
@@ -115,75 +114,55 @@
     for (PHAsset *asset in self.assetsFetchResults) {
         RY_Asset *ryAsset = [[RY_Asset alloc] init];
         ryAsset.asset = asset;
-        ryAsset.gifTag = @"";
+        ryAsset.isGIF = NO;
         [self.dataSource addObject:ryAsset];
     }
     
     if ([NSThread isMainThread]) {
         
-        [_collectionView reloadData];
-        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(_scrollToBottom:) userInfo:nil repeats:NO];
-
-//        [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
-//            
-//            [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
-//            
-//            [timer invalidate];
-//        }];
+        [self _reloadData];
     }
     else{
         
         dispatch_sync(dispatch_get_main_queue(), ^{
             
-            [_collectionView reloadData];
-            
-            [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(_scrollToBottom:) userInfo:nil repeats:NO];
-//            
-//            [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
-//                
-//                [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
-//                
-//                [timer invalidate];
-//            }];
+            [self _reloadData];
         });
     }
    
  
     
-/*
-//    PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
-//    [options setVersion:PHImageRequestOptionsVersionCurrent];
-//    [options setResizeMode:PHImageRequestOptionsResizeModeFast];
-//    [options setDeliveryMode:PHImageRequestOptionsDeliveryModeOpportunistic];
-
-    NSArray *temp = [NSArray arrayWithArray:self.dataSource];
-    for (RY_Asset *asset  in temp) {
+    if (self.isGIFAvailable) {
         
-        [self.imageManager requestImageDataForAsset:asset.asset options:options resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
+        PHImageRequestOptions *requestoptions = [[PHImageRequestOptions alloc] init];
+        [requestoptions setVersion:PHImageRequestOptionsVersionCurrent];
+        [requestoptions setResizeMode:PHImageRequestOptionsResizeModeFast];
+        [requestoptions setDeliveryMode:PHImageRequestOptionsDeliveryModeOpportunistic];
+        
+        NSArray *temp = [NSArray arrayWithArray:self.dataSource];
+        for (RY_Asset *asset  in temp) {
             
-            NSString *tag = @"";
-            if ([dataUTI isEqualToString:(__bridge NSString *)kUTTypeGIF]) {
+            [self.imageManager requestImageDataForAsset:asset.asset options:requestoptions resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
                 
-                tag = @"1";
-            }
-            else{
-                
-                tag = @"0";
-            }
-            
-            for ( int i = 0; i < self.dataSource.count; i ++) {
-                
-                RY_Asset *ry = [self.dataSource objectAtIndex:i];
-                if ([ry.asset isEqual:asset.asset]) {
+                BOOL isGIF = NO;
+                if ([dataUTI isEqualToString:(__bridge NSString *)kUTTypeGIF]) {
                     
-                    ry.gifTag = tag;
-                    
-                    [_collectionView reloadItemsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:i inSection:0]]];
+                    isGIF = YES;
                 }
-            }
-        }];
+                
+                for ( int i = 0; i < self.dataSource.count; i ++) {
+                    
+                    RY_Asset *ry = [self.dataSource objectAtIndex:i];
+                    if ([ry.asset isEqual:asset.asset]) {
+                        
+                        ry.isGIF = isGIF;
+                        
+                        [_collectionView reloadItemsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:i inSection:0]]];
+                    }
+                }
+            }];
+        }
     }
-   //*/
 }
 - (void)_scrollToBottom:(NSTimer *)timer{
 
@@ -191,11 +170,60 @@
     
     [timer invalidate];
 }
+- (void)_reloadData{
+
+    [_collectionView reloadData];
+    if ([[UIDevice currentDevice] systemVersion].floatValue < 10.0) {
+        
+        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(_scrollToBottom:) userInfo:nil repeats:NO];
+    }
+    else{
+        
+        [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
+            
+            [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+            
+            [timer invalidate];
+        }];
+    }
+}
+- (void)_initData{
+
+    PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
+    
+    if (status == PHAuthorizationStatusDenied) {
+        
+        
+        [self _showNoAcceessToPhotoLibrary];
+    }
+    else if (status == PHAuthorizationStatusNotDetermined) {
+        
+        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+            
+            if (status == PHAuthorizationStatusAuthorized) {
+                
+                [self _loadData];
+            }
+            else if (status == PHAuthorizationStatusDenied) {
+                
+                [self _showNoAcceessToPhotoLibrary];
+            }
+        }];
+    }
+    else if (status == PHAuthorizationStatusAuthorized) {
+        
+        [self _loadData];
+    }
+}
+
 
 @end
 
 @implementation RY_ImagePickerVC
 
+
+#pragma mark -
+#pragma mark - sharedInstance
 + (RY_ImagePickerVC *)sharedInstance {
     static dispatch_once_t onceToken;
     static RY_ImagePickerVC * userHelper;
@@ -206,10 +234,12 @@
 }
 
 
-
-
 #pragma mark -
 #pragma mark - lifeCycle
+- (PHImageManager *)imageManager{
+
+    return [PHImageManager defaultManager];
+}
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -236,7 +266,6 @@
         UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithCustomView:backButton];
         self.navigationItem.leftBarButtonItem = backItem;
     }
-    
 
     [_collectionView registerNib:[UINib nibWithNibName:@"RY_PhotoCell" bundle:[NSBundle mainBundle]] forCellWithReuseIdentifier:@"RY_PhotoCell"];
     
@@ -244,32 +273,11 @@
     _countLabel.layer.cornerRadius = 10;
     
     self.selectedResults = [NSMutableArray array];
+    [self _initData];
+}
+- (void)viewWillAppear:(BOOL)animated{
     
-    PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
-    
-    if (status == PHAuthorizationStatusDenied) {
-        
-        
-        [self _showNoAcceessToPhotoLibrary];
-    }
-    else if (status == PHAuthorizationStatusNotDetermined) {
-    
-       [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
-           
-           if (status == PHAuthorizationStatusAuthorized) {
-              
-               [self _loadData];
-           }
-           else if (status == PHAuthorizationStatusDenied) {
-                   
-            [self _showNoAcceessToPhotoLibrary];
-        }
-       }];
-    }
-    else if (status == PHAuthorizationStatusAuthorized) {
-       
-        [self _loadData];
-    }
+    [super viewWillAppear:animated];
 }
 - (void)didReceiveMemoryWarning{
     
@@ -283,7 +291,6 @@
         self.view = nil;
     }
 }
-
 
 
 #pragma mark -
@@ -303,7 +310,27 @@
     }
     return result;
 }
+- (BOOL)isGifAsset:(PHAsset *)asset{
 
+       return YES;
+}
+- (void)isGIFAsset:(PHAsset *)asset withResult:(isGIFBlock)result{
+        
+        PHImageRequestOptions *requestoptions = [[PHImageRequestOptions alloc] init];
+        [requestoptions setVersion:PHImageRequestOptionsVersionCurrent];
+        [requestoptions setResizeMode:PHImageRequestOptionsResizeModeExact];
+        [requestoptions setDeliveryMode:PHImageRequestOptionsDeliveryModeOpportunistic];
+        [self.imageManager requestImageDataForAsset:asset options:requestoptions resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
+            
+            BOOL isGIF = NO;
+            if ([dataUTI isEqualToString:(__bridge NSString *)kUTTypeGIF]) {
+                
+                isGIF = YES;
+            }
+            
+            result(isGIF);
+        }];
+}
 
 
 #pragma mark -
@@ -320,10 +347,10 @@
     
     RY_PhotoCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"RY_PhotoCell" forIndexPath:indexPath];
     
-    RY_Asset *ryAsset = [self.dataSource objectAtIndex:indexPath.row];
-    PHAsset *asset = ryAsset.asset;
+    RY_Asset *asset = [self.dataSource objectAtIndex:indexPath.row];
+    PHAsset *asset1 = [self.assetsFetchResults objectAtIndex:indexPath.row];
     
-    if ([self.selectedResults containsObject:asset]) {
+    if ([self.selectedResults containsObject:asset1]) {
         
         cell.seletedImageView.image = [UIImage imageNamed:@"c_d_15"];
     }
@@ -332,11 +359,8 @@
         cell.seletedImageView.image = [UIImage imageNamed:@"c_d_14"];
     }
     
-    NSLog(@"%@", ryAsset.gifTag);
-    if (ryAsset.gifTag.length == 0) {
-        
-    }
-    else if ([ryAsset.gifTag isEqualToString:@"1"]){
+    
+    if (asset.isGIF){
         
         cell.gifLabel.hidden = NO;
     }
@@ -360,7 +384,7 @@
         CGFloat scale = [[UIScreen mainScreen] scale];
         size = CGSizeMake(size.width * scale, size.height * scale);
         
-        [self.imageManager requestImageForAsset:asset
+        [self.imageManager requestImageForAsset:asset.asset
                                      targetSize:size
                                     contentMode:PHImageContentModeAspectFill
                                         options:options
@@ -397,9 +421,9 @@
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath{
     
     
-//    PHAsset *asset = [self.assetsFetchResults objectAtIndex:indexPath.row];
-    RY_Asset *ryAsset = [self.dataSource objectAtIndex:indexPath.row];
-    PHAsset *asset = ryAsset.asset;
+    PHAsset *asset = [self.assetsFetchResults objectAtIndex:indexPath.row];
+//    RY_Asset *asset = [self.dataSource objectAtIndex:indexPath.row];
+//    PHAsset *asset = ryAsset.asset;
     if ([self.selectedResults containsObject:asset]) {
         
         [self.selectedResults removeObject:asset];
@@ -439,4 +463,14 @@
 
 
 @end
+
+
+
+
+
+
+
+
+
+
 
