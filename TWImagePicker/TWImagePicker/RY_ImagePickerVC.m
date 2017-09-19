@@ -363,16 +363,18 @@
     }
     
     
-    BOOL isGif = [[[NSUserDefaults standardUserDefaults] objectForKey:asset.asset.localIdentifier] boolValue];
-    asset.isGIF = isGif;
-    if (asset.isGIF){
+    if (self.isGIFAvailable) {
         
-        cell.gifLabel.hidden = NO;
-    }
-    else{
-        
-        cell.gifLabel.hidden = YES;
-        
+        BOOL isGif = [[[NSUserDefaults standardUserDefaults] objectForKey:asset.asset.localIdentifier] boolValue];
+        asset.isGIF = isGif;
+        if (asset.isGIF){
+            
+            cell.gifLabel.hidden = NO;
+        }
+        else{
+            
+            cell.gifLabel.hidden = YES;
+        }   
     }
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
