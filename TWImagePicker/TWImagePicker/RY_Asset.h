@@ -13,5 +13,7 @@
 
 @property (nonatomic, strong)PHAsset *asset;
 @property (nonatomic, assign)BOOL isGIF;
+@property (nonatomic, strong)UIImage *thullmImage;
+
 
 @end

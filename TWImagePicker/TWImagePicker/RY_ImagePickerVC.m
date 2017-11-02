@@ -52,25 +52,12 @@
 }
 - (void)_sure{
 
-//  PHAsset *asset =  [self.selectedResults objectAtIndex:10000];
-    /*
-    [self.selectedResults removeAllObjects];
-    for (int i = 0; i < self.assetsFetchResults.count; i ++) {
-        
-        if (i < 100) {
-            PHAsset *asset = [self.assetsFetchResults objectAtIndex:i];
-            
-            [self.selectedResults addObject:asset];
-        }
-    }
-    */
     if (self.selectedResults.count == 0) {
         return;
     }
     if (self.delegate) {
         [self.delegate RY_ImagePickerVC:self didselectWithAssets:self.selectedResults];
     }
-    
 }
 - (void)_back{
     
@@ -104,7 +91,6 @@
 }
 - (void)_loadData{
     
-    
     PHFetchOptions *options = [[PHFetchOptions alloc] init];
     options.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:YES]];
     
@@ -115,6 +101,7 @@
         RY_Asset *ryAsset = [[RY_Asset alloc] init];
         ryAsset.asset = asset;
         ryAsset.isGIF = NO;
+        ryAsset.thullmImage = nil;
         [self.dataSource addObject:ryAsset];
     }
     
@@ -130,8 +117,7 @@
         });
     }
    
- 
-    
+   
     if (self.isGIFAvailable) {
         
         PHImageRequestOptions *requestoptions = [[PHImageRequestOptions alloc] init];
@@ -162,7 +148,6 @@
                             
                             [_collectionView reloadItemsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:i inSection:0]]];
                             
-                            NSLog(@"%@", asset.asset.localIdentifier);
                             [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:isGIF] forKey:asset.asset.localIdentifier];
                         }
                     }
@@ -170,6 +155,82 @@
             }
         }
     }
+    
+//    [self performSelector:@selector(_tt) withObject:nil afterDelay:1];
+
+}
+- (void)_tt{
+    
+//    BOOL result = YES;
+//    RY_Asset *asset  in self.dataSource
+    for (int i = 0; i < self.dataSource.count; i ++ ) {
+        
+        RY_Asset *asset = [self.dataSource objectAtIndex:self.dataSource.count - i - 1];
+        if (asset.thullmImage && [asset.thullmImage isKindOfClass:[UIImage class]]) {
+           
+//            result = result & YES;
+        }
+        else{
+            
+//            result = result & NO;
+
+            [self _cacheImageWithAsset:asset];
+//            break;
+        }
+    }
+    
+//    if (result) {
+//
+//        [_collectionView reloadData];
+//    }
+}
+- (void)_cacheImageWithAsset:(RY_Asset *)asset{
+    
+    
+//    return;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    
+        PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
+        [options setVersion:PHImageRequestOptionsVersionCurrent];
+        [options setResizeMode:PHImageRequestOptionsResizeModeFast];
+        [options setDeliveryMode:PHImageRequestOptionsDeliveryModeOpportunistic];
+        
+        float width = (SCREEN_WIDTH - SPACING * (NUM_IN_ROW + 1)) / NUM_IN_ROW;
+        
+        CGSize size = CGSizeMake(width, width);
+        
+        CGFloat scale = [[UIScreen mainScreen] scale];
+        size = CGSizeMake(size.width * scale, size.height * scale);
+        
+        
+       PHImageRequestID  requestID = [self.imageManager requestImageForAsset:asset.asset
+                                     targetSize:size
+                                    contentMode:PHImageContentModeAspectFill
+                                        options:options
+                                  resultHandler:^(UIImage *result, NSDictionary *info) {
+                                      
+//                                      dispatch_async(dispatch_get_main_queue(), ^{
+                                      
+                                          for ( int i = 0; i < self.dataSource.count; i ++) {
+                                              
+                                              RY_Asset *ry = [self.dataSource objectAtIndex:i];
+                                              if ([ry.asset isEqual:asset.asset]) {
+                                                  
+//                                                  [_collectionView reloadItemsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:i inSection:0]]];
+
+                                                  ry.thullmImage = result;
+                                                 
+                                                  break;
+                                              }
+                                          }
+//                                        });
+                                      
+                                  }];
+        
+        NSLog(@"%d", requestID);
+        
+        
+    });
 }
 - (void)_scrollToBottom:(NSTimer *)timer{
 
@@ -344,16 +405,15 @@
 }
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
     
-    return self.assetsFetchResults.count;
+    return self.dataSource.count;
 }
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
     
     RY_PhotoCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"RY_PhotoCell" forIndexPath:indexPath];
     
     RY_Asset *asset = [self.dataSource objectAtIndex:indexPath.row];
-    PHAsset *asset1 = [self.assetsFetchResults objectAtIndex:indexPath.row];
     
-    if ([self.selectedResults containsObject:asset1]) {
+    if ([self.selectedResults containsObject:asset.asset]) {
         
         cell.seletedImageView.image = [UIImage imageNamed:@"c_d_15"];
     }
@@ -377,9 +437,18 @@
         }   
     }
     
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    
+    
+    UIImage *image = asset.thullmImage;
+///*
+    if (image && [image isKindOfClass:[UIImage class]]) {
         
+        cell.thumbImageView.image = asset.thullmImage;
+    }
+    else{
+              
         PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
+        options.synchronous = YES;
         [options setVersion:PHImageRequestOptionsVersionCurrent];
         [options setResizeMode:PHImageRequestOptionsResizeModeFast];
         [options setDeliveryMode:PHImageRequestOptionsDeliveryModeOpportunistic];
@@ -391,19 +460,29 @@
         CGFloat scale = [[UIScreen mainScreen] scale];
         size = CGSizeMake(size.width * scale, size.height * scale);
         
-        [self.imageManager requestImageForAsset:asset.asset
+     PHImageRequestID requestID = [self.imageManager requestImageForAsset:asset.asset
                                      targetSize:size
                                     contentMode:PHImageContentModeAspectFill
                                         options:options
                                   resultHandler:^(UIImage *result, NSDictionary *info) {
-                                      dispatch_async(dispatch_get_main_queue(), ^{
-                                          
+                                      
                                           cell.thumbImageView.image = result;
-                                      });
-
+                                          
+                                          for ( int i = 0; i < self.dataSource.count; i ++) {
+                                              
+                                              RY_Asset *ry = [self.dataSource objectAtIndex:i];
+                                              if ([ry.asset isEqual:asset.asset]) {
+                                                  
+                                                  ry.thullmImage = result;
+                                                break;
+                                              }
+                                          }
                                   }];
         
-            });
+        NSLog(@"%d", requestID);
+        
+    }
+    //*/
          
     return cell;
 }
@@ -428,9 +507,9 @@
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath{
     
     
-    PHAsset *asset = [self.assetsFetchResults objectAtIndex:indexPath.row];
-//    RY_Asset *asset = [self.dataSource objectAtIndex:indexPath.row];
-//    PHAsset *asset = ryAsset.asset;
+//    PHAsset *asset = [self.assetsFetchResults objectAtIndex:indexPath.row];
+    RY_Asset *ryAsset = [self.dataSource objectAtIndex:indexPath.row];
+    PHAsset *asset = ryAsset.asset;
     if ([self.selectedResults containsObject:asset]) {
         
         [self.selectedResults removeObject:asset];
