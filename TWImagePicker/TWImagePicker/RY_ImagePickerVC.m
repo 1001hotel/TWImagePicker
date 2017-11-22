@@ -158,7 +158,10 @@
 }
 - (void)_scrollToBottom:(NSTimer *)timer{
 
-    [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+    if (self.dataSource.count > 0) {
+        
+ [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+    }
     
     [timer invalidate];
 }
@@ -173,8 +176,10 @@
         
         [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:NO block:^(NSTimer * _Nonnull timer) {
             
-            [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
-            
+            if (self.dataSource.count > 0) {
+                
+                 [_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.dataSource.count - 1 inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
+            }
             [timer invalidate];
         }];
     }
